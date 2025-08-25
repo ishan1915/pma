@@ -218,7 +218,7 @@ def remove_member(request,pk,user_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def project_list(request):
-    workspace_id = request.query_params.get("workspace_id")
+    workspace_id = request.query_params.get("workspace")
     if not workspace_id:
         return Response({"error": "workspace id required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -286,3 +286,78 @@ def remove_project_member(request, id, user_id):
         project.members.remove(user)
         return Response({"message": "Member removed successfully"})
     return Response({"error": "User not in project"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def task_list(request):
+    project_id=request.query_param.get("project")
+    if not project_id:
+        return Response({"error":"project id required"},status=status.HTTP_400_BAD_REQUEST)
+    project=get_object_or_404(Project,id=project_id)
+    if request.user not in project.members.all():
+        return Response({"error":"not allowed"},status=status.HTTP_403_FORBIDDEN)
+    tasks=Task.objects.filter(project=project)
+    serializer=TaskSerializers(tasks,many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET','PATCH','DELETE'])
+@permission_classes([IsAuthenticated])
+def task_detail(request,id):
+    task=get_object_or_404(Task,id=id)
+    if request.user not in task.project.members.all():
+        return Response({"error":"not allowed"},status=status.HTTP_403_FORBIDDEN)
+    
+    if request.method=='GET':
+        serializer=TaskSerializers(task)
+        return Response(serializer.data)
+    
+    elif request.method=='PATCH':
+        serializer=TaskSerializers(task,data=request.data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.save)
+        return Response(serializer.error,status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method=='DELETE':
+        task.delete()
+        return Response({"message": "Task deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def assign_task(request, id):
+    task = get_object_or_404(Task, id=id)
+    if request.user not in task.project.members.all():
+        return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+
+    user_id = request.data.get("user_id")
+    if not user_id:
+        return Response({"error": "user_id required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = get_object_or_404(User, id=user_id)
+
+    if user not in task.project.members.all():
+        return Response({"error": "User not in project"}, status=status.HTTP_400_BAD_REQUEST)
+
+    task.assignee = user
+    task.save()
+    return Response({"message": "Task assigned successfully"})
+
+
+# Update task status
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_task_status(request, id):
+    task = get_object_or_404(Task, id=id)
+    if request.user not in task.project.members.all():
+        return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+
+    status_value = request.data.get("status")
+    if status_value not in ["To Do", "In Progress", "Done"]:
+        return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+    task.status = status_value
+    task.save()
+    return Response({"message": "Status updated successfully"})

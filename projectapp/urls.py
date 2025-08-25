@@ -34,7 +34,10 @@ urlpatterns = [
     path("project/<int:id>/remove_member/<int:user_id>/", remove_project_member, name="project-remove-member"),
 
 
-
+    path("tasks/", task_list, name="task-list"),
+    path("task/<int:id>/", task_detail, name="task-detail"),
+    path("task/<int:id>/assign/", assign_task, name="assign-task"),
+    path("task/<int:id>/status/", update_task_status, name="task-status"),
 
 
      path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
