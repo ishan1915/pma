@@ -18,3 +18,5 @@ psycopg2-binary>=2.9,<3.0
 
 # CORS support (if you’re using React/other frontend)
 django-cors-headers>=4.3,<5.0
+
+dj-database-url
