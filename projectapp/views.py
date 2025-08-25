@@ -2,13 +2,15 @@ from django.shortcuts import get_object_or_404, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status,permissions
-from django.contrib.auth import login
+from django.contrib.auth import login,logout,get_user_model
 from .models import User,Workspace,Project,Task
-from .serializers import SignupSerializer,LoginSerializer,WorkspaceSerializer,ProjectSerializers,TaskSerializers
+from .serializers import SignupSerializer,LoginSerializer,WorkspaceSerializer,ProjectSerializers,TaskSerializers,UserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny,IsAuthenticated,IsAdminUser
+from rest_framework.decorators import api_view,permission_classes
 
 # Create your views here.
-
+#User=get_user_model
 class SignupAPI(APIView):
     permission_classes=[permissions.AllowAny]
     def post(self,request):
@@ -16,7 +18,7 @@ class SignupAPI(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"message":"User created sucessfully"},status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,status=status.HTTP_404_NOT_FOUND)
+        return Response({"error":"Email and password are required"},status=status.HTTP_400_BAD_REQUEST)
     
 
 class LoginView(APIView):
@@ -32,6 +34,17 @@ class LoginView(APIView):
             return Response({"message":"login sucess","refresh": str(refresh),
                 "access": str(refresh.access_token)})
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+
+class LogoutView(APIView):
+    def post(self,request):
+        try:
+            refresh_token=request.data['refresh']
+            token=RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail":"sucessfully logout"},status=200)
+        except Exception:
+            return Response({"error":"invalid token"},status=400)
     
 
 class WorkspaceCreateAPI(APIView):
@@ -116,3 +129,160 @@ class TaskCreateAPI(APIView):
             serializer.save()
             return Response({"message": "Task created successfully", "task": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+
+
+class CurrentUserAPI(APIView):
+    permission_classes = [IsAuthenticated]   
+    
+    def get(self, request):
+        serializer = UserSerializer(request.user)    
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class UpdateProfileInfo(APIView):
+    permission_classes=[IsAuthenticated]
+    def patch(self,request):
+        serializer=UserSerializer(request.user,data=request.data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_workspacelist(request):
+    workspaces=Workspace.objects.filter(members=request.user)
+    serializer=WorkspaceSerializer(workspaces,many=True)
+    return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+@api_view(['GET','DELETE'])
+@permission_classes([IsAuthenticated])
+def workspace_details(request,pk):
+    if request.method=='GET':
+        workspace=get_object_or_404(Workspace,id=pk,members=request.user)
+        serializer=WorkspaceSerializer(workspace)
+        return Response(serializer.data)
+    
+    elif request.method=='DELETE':
+        workspace=get_object_or_404(Workspace,id=pk)
+        if workspace.created_by != request.user:
+            return Response({"error":"only owner can delete the workspace"},status=status.HTTP_403_FORBIDDEN)
+        workspace.delete()
+        return Response({"detail": "Workspace deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_members(request,pk):
+    workspace=get_object_or_404(Workspace,id=pk)
+    if workspace.created_by != request.user:
+        return Response({"error":"only admin can add users"},status=status.HTTP_403_FORBIDDEN)
+    
+    email=request.data.get("email")
+    if not email:
+        return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+    workspace.members.add(user)
+    return Response({"detail": f"{user.email} added to workspace"}, status=status.HTTP_200_OK)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_member(request,pk,user_id):
+    workspace=get_object_or_404(Workspace,id=pk)
+    if workspace.created_by != request.user:
+        return Response({"error":"only admin can delete users"},status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        user=User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    workspace.members.remove(user)
+    return Response({"detail": f"{user.email} removed from workspace"}, status=status.HTTP_200_OK)
+
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def project_list(request):
+    workspace_id = request.query_params.get("workspace")
+    if not workspace_id:
+        return Response({"error": "workspace id required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    workspace = get_object_or_404(Workspace, id=workspace_id)
+    if request.user not in workspace.members.all():
+        return Response({"error": "Not a member of this workspace"}, status=status.HTTP_403_FORBIDDEN)
+
+    projects = Project.objects.filter(workspace=workspace)
+    serializer = ProjectSerializers(projects, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET", "PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def project_detail(request, id):
+    project = get_object_or_404(Project, id=id)
+
+    if request.user not in project.workspace.members.all():
+        return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == "GET":
+        serializer = ProjectSerializers(project)
+        return Response(serializer.data)
+
+    elif request.method == "PATCH":
+        serializer = ProjectSerializers(project, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == "DELETE":
+        project.delete()
+        return Response({"message": "Project deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def add_project_member(request, id):
+    project = get_object_or_404(Project, id=id)
+    if request.user not in project.workspace.members.all():
+        return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+
+    user_id = request.data.get("user_id")
+    user = get_object_or_404(User, id=user_id)
+
+    if user not in project.workspace.members.all():
+        return Response({"error": "User not part of workspace"}, status=status.HTTP_400_BAD_REQUEST)
+
+    project.members.add(user)
+    return Response({"message": "Member added successfully"})
+
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def remove_project_member(request, id, user_id):
+    project = get_object_or_404(Project, id=id)
+    if request.user not in project.workspace.members.all():
+        return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+
+    user = get_object_or_404(User, id=user_id)
+    if user in project.members.all():
+        project.members.remove(user)
+        return Response({"message": "Member removed successfully"})
+    return Response({"error": "User not in project"}, status=status.HTTP_400_BAD_REQUEST)

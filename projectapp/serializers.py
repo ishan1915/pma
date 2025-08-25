@@ -1,11 +1,15 @@
 from rest_framework import serializers
 from .models import User,Workspace,Project,Task
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate,get_user_model
+
+
+#User=get_user_model
 
 class UserSerializer(serializers.Serializer):
     class Meta:
         model=User
         fields=['id','name','email']
+        extra_kwargs = {"password": {"write_only": True}}
 
 
 
@@ -38,6 +42,12 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials")
         return {'user':user}
     
+
+class UserMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "name", "email"]
+
 class WorkspaceSerializer(serializers.ModelSerializer):
         class Meta:
             model=Workspace
@@ -57,7 +67,17 @@ class ProjectSerializers(serializers.ModelSerializer):
 
 
 class TaskSerializers(serializers.ModelSerializer):
-    class Meta:
-        model=Task
-        fields=['id','project','title','description','assigned_to','deadline','created_at']
+    assignee = UserMiniSerializer(read_only=True)  
+    assignee_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source="assigned_to",   
+        write_only=True,
+        required=False
+    )
 
+    class Meta:
+        model = Task
+        fields = [
+            "id", "title", "description", "status", "deadline",
+            "project", "assignee", "assignee_id", "created_at"
+        ]
