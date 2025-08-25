@@ -36,6 +36,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Workspace(models.Model):
     name=models.CharField(max_length=255)
     members=models.ManyToManyField(User,related_name="workspaces")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_workspaces")  # 👈 add this
+
+
 
     def __str__(self):
         return self.name

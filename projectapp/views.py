@@ -175,8 +175,7 @@ def workspace_details(request,pk):
     
     elif request.method=='DELETE':
         workspace=get_object_or_404(Workspace,id=pk)
-        if workspace.created_by != request.user:
-            return Response({"error":"only owner can delete the workspace"},status=status.HTTP_403_FORBIDDEN)
+         
         workspace.delete()
         return Response({"detail": "Workspace deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
     
@@ -187,9 +186,7 @@ def workspace_details(request,pk):
 @permission_classes([IsAuthenticated])
 def add_members(request,pk):
     workspace=get_object_or_404(Workspace,id=pk)
-    if workspace.created_by != request.user:
-        return Response({"error":"only admin can add users"},status=status.HTTP_403_FORBIDDEN)
-    
+     
     email=request.data.get("email")
     if not email:
         return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -206,8 +203,7 @@ def add_members(request,pk):
 @permission_classes([IsAuthenticated])
 def remove_member(request,pk,user_id):
     workspace=get_object_or_404(Workspace,id=pk)
-    if workspace.created_by != request.user:
-        return Response({"error":"only admin can delete users"},status=status.HTTP_403_FORBIDDEN)
+     
     
     try:
         user=User.objects.get(id=user_id)
