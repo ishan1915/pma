@@ -55,7 +55,11 @@ class WorkspaceCreateAPI(APIView):
         if not name:
             return Response({"error":"Workspace name is requird"},status=status.HTTP_400_BAD_REQUEST)
         
-        workspace=Workspace.objects.create(name=name)
+        workspace=Workspace.objects.create(
+        name=request.data.get("name"),
+        created_by=request.user
+        )
+        workspace.members.add(request.user)
 
         if member_emails:
             users=User.objects.filter(email__in=member_emails)
