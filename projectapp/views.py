@@ -218,7 +218,7 @@ def remove_member(request,pk,user_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def project_list(request):
-    workspace_id = request.query_params.get("workspace")
+    workspace_id = request.query_params.get("workspace_id")
     if not workspace_id:
         return Response({"error": "workspace id required"}, status=status.HTTP_400_BAD_REQUEST)
 
