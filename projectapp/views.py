@@ -78,14 +78,14 @@ class WorkspaceUpdateAPI(APIView):
             return Response({"error":"Workspace not found"},status=status.HTTP_404_NOT_FOUND)
         
         name=request.data.get("name")
+        if name:
+            workspace.name=name
+            workspace.save()
+        
         member_emails=request.data.get("members",[])
-
-        workspace.name=name
-        workspace.save()
-
         if member_emails:
             users=User.objects.filter(email__in=member_emails)
-            workspace.members.set(users)
+            workspace.members.add(*users)
 
         serializer=WorkspaceSerializer(workspace)
         return Response(serializer.data,status=status.HTTP_200_OK)
