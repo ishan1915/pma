@@ -57,12 +57,19 @@ class Project(models.Model):
 
 
 class Task(models.Model):
+    STATUS_CHOICES = [
+        ("todo", "To Do"),
+        ("in_progress", "In Progress"),
+        ("done", "Done"),
+    ]
+
     project=models.ForeignKey(Project,on_delete=models.CASCADE,related_name="tasks")
     title=models.CharField(max_length=255)
     description=models.TextField(blank=True,null=True)
     assigned_to=models.ForeignKey(User,on_delete=models.CASCADE,related_name="tasks")
     deadline=models.DateField()
     created_at=models.DateTimeField(auto_now_add=True)
+    status=models.CharField(max_length=20, choices=STATUS_CHOICES, default="todo")
 
     def __str__(self):
         return self.title
