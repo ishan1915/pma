@@ -74,6 +74,7 @@ class ProjectSerializers(serializers.ModelSerializer):
 
 
 class TaskSerializers(serializers.ModelSerializer):
+    project=serializers.StringRelatedField()
     assignee = UserMiniSerializer(source="assigned_to",read_only=True)  
     assignee_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
