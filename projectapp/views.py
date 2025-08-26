@@ -321,7 +321,7 @@ def task_detail(request,id):
         serializer=TaskSerializers(task,data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.save)
+            return Response(serializer.data,status=status.HTTP_200_OK)
         return Response(serializer.error,status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method=='DELETE':
