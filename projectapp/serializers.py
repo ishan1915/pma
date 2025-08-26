@@ -61,11 +61,13 @@ class WorkspaceSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializers(serializers.ModelSerializer):
-    members = serializers.StringRelatedField(many=True,read_only=True)
+    members = UserSerializer(many=True, read_only=True)   
+    workspace = serializers.StringRelatedField()           
 
     class Meta:
         model = Project
         fields = ['id', 'name', 'description', 'workspace', 'members']
+
 
    
 

@@ -115,7 +115,7 @@ class ProjectCreateAPI(APIView):
                 member_ids = [member_ids]
 
         if not name or not workspace_id:
-            return Response({"error":"Project name and workspace required"})
+            return Response({"error":"Project name and workspace required"},status=400)
         
 
         workspace=get_object_or_404(Workspace,id=workspace_id)
