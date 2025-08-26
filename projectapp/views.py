@@ -290,14 +290,14 @@ def remove_project_member(request, id, user_id):
     user = get_object_or_404(User, id=user_id)
     if user in project.members.all():
         project.members.remove(user)
-        return Response({"message": "Member removed successfully"})
+        return Response({"message": "Member removed successfully"},status=200)
     return Response({"error": "User not in project"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def task_list(request):
-    project_id=request.query_param.get("project")
+    project_id=request.query_params.get("project")
     if not project_id:
         return Response({"error":"project id required"},status=status.HTTP_400_BAD_REQUEST)
     project=get_object_or_404(Project,id=project_id)
