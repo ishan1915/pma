@@ -56,14 +56,14 @@ class WorkspaceCreateAPI(APIView):
             return Response({"error":"Workspace name is requird"},status=status.HTTP_400_BAD_REQUEST)
         
         workspace=Workspace.objects.create(
-        name=request.data.get("name"),
+        name=name,
         created_by=request.user
         )
         workspace.members.add(request.user)
 
         if member_emails:
             users=User.objects.filter(email__in=member_emails)
-            workspace.members.set(users)
+            workspace.members.add(users)
         
         serializer=WorkspaceSerializer(workspace)
         return Response(serializer.data,status=status.HTTP_201_CREATED)

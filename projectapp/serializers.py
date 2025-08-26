@@ -49,10 +49,15 @@ class UserMiniSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "email"]
 
 class WorkspaceSerializer(serializers.ModelSerializer):
-        class Meta:
-            model=Workspace
-            fields=['id','name' ,'members']
-            read_only_fields=['members']
+    members = serializers.SlugRelatedField(
+        many=True,
+        read_only=True,
+        slug_field="email"
+    )
+
+    class Meta:
+        model = Workspace
+        fields = ['id', 'name', 'members']
 
 
 class ProjectSerializers(serializers.ModelSerializer):
