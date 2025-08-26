@@ -301,8 +301,7 @@ def task_list(request):
     if not project_id:
         return Response({"error":"project id required"},status=status.HTTP_400_BAD_REQUEST)
     project=get_object_or_404(Project,id=project_id)
-    if request.user not in project.members.all():
-        return Response({"error":"not allowed"},status=status.HTTP_403_FORBIDDEN)
+     
     tasks=Task.objects.filter(project=project)
     serializer=TaskSerializers(tasks,many=True)
     return Response(serializer.data)
