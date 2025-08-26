@@ -8,6 +8,7 @@ from .serializers import SignupSerializer,LoginSerializer,WorkspaceSerializer,Pr
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny,IsAuthenticated,IsAdminUser
 from rest_framework.decorators import api_view,permission_classes
+import json
 
 # Create your views here.
 #User=get_user_model
@@ -107,6 +108,11 @@ class ProjectCreateAPI(APIView):
         description=request.data.get('description','')
         workspace_id=request.data.get('workspace')
         member_ids=request.data.get('members',[])
+        if isinstance(member_ids, str):  
+            try:
+                member_ids = json.loads(member_ids)  # Convert string → list
+            except json.JSONDecodeError:
+                member_ids = [member_ids]
 
         if not name or not workspace_id:
             return Response({"error":"Project name and workspace required"})
@@ -152,7 +158,7 @@ class UpdateProfileInfo(APIView):
         serializer=UserSerializer(request.user,data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data,status=200)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
