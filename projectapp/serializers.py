@@ -74,12 +74,12 @@ class ProjectSerializers(serializers.ModelSerializer):
 
 
 class TaskSerializers(serializers.ModelSerializer):
-    assignee = UserMiniSerializer(read_only=True)  
+    assignee = UserMiniSerializer(source="assigned_to",read_only=True)  
     assignee_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source="assigned_to",   
         write_only=True,
-        required=False
+         
     )
 
     class Meta:
