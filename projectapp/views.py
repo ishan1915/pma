@@ -311,8 +311,7 @@ def task_list(request):
 @permission_classes([IsAuthenticated])
 def task_detail(request,id):
     task=get_object_or_404(Task,id=id)
-    if request.user not in task.project.members.all():
-        return Response({"error":"not allowed"},status=status.HTTP_403_FORBIDDEN)
+    
     
     if request.method=='GET':
         serializer=TaskSerializers(task)
@@ -334,8 +333,7 @@ def task_detail(request,id):
 @permission_classes([IsAuthenticated])
 def assign_task(request, id):
     task = get_object_or_404(Task, id=id)
-    if request.user not in task.project.members.all():
-        return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+ 
 
     user_id = request.data.get("user_id")
     if not user_id:
@@ -356,8 +354,7 @@ def assign_task(request, id):
 @permission_classes([IsAuthenticated])
 def update_task_status(request, id):
     task = get_object_or_404(Task, id=id)
-    if request.user not in task.project.members.all():
-        return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+ 
 
     status_value = request.data.get("status")
     if status_value not in ["To Do", "In Progress", "Done"]:
