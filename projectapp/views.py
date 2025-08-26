@@ -63,7 +63,7 @@ class WorkspaceCreateAPI(APIView):
 
         if member_emails:
             users=User.objects.filter(email__in=member_emails)
-            workspace.members.add(users)
+            workspace.members.add(*users)
         
         serializer=WorkspaceSerializer(workspace)
         return Response(serializer.data,status=status.HTTP_201_CREATED)
