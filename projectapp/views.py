@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status,permissions
 from django.contrib.auth import login,logout,get_user_model
 from .models import User,Workspace,Project,Task
-from .serializers import SignupSerializer,LoginSerializer,WorkspaceSerializer,ProjectSerializers,TaskSerializers,UserSerializer
+from .serializers import SignupSerializer,LoginSerializer,WorkspaceSerializer,ProjectSerializers,TaskSerializers,UserSerializer,AddUserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny,IsAuthenticated,IsAdminUser
 from rest_framework.decorators import api_view,permission_classes
@@ -363,3 +363,27 @@ def update_task_status(request, id):
     task.status = status_value
     task.save()
     return Response({"message": "Status updated successfully"})
+
+
+
+
+###ADD new user directly to project
+@api_view(['POST'])
+def add_new_usertoproject(request,id):
+    project=get_object_or_404(Project,id=id)
+    serializers=AddUserSerializer(data=request.data)
+    if serializers.is_valid():
+        user=serializers.save()
+        project.workspace.members.add(user)
+        project.members.add(user)
+        return Response({
+            "message": "User created and added to project successfully",
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)

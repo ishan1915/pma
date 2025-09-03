@@ -31,6 +31,8 @@ urlpatterns = [
     path("projects/", project_list, name="project-list"),
     path("project/<int:id>/", project_detail, name="project-detail"),
     path("project/<int:id>/add_member/", add_project_member, name="project-add-member"),
+
+    path("project/<int:id>/new_add_member/", add_new_usertoproject , name="project-add-member-new"),
     path("project/<int:id>/remove_member/<int:user_id>/", remove_project_member, name="project-remove-member"),
 
 
