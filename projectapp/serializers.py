@@ -16,7 +16,7 @@ class AddUserSerializer(serializers.ModelSerializer):
     password=serializers.CharField(write_only=True)
     confirm_password=serializers.CharField(write_only=True)
 
-    class Mets:
+    class Meta:
         model=User
         fields=['name','email','skills','experience','phone','password','confirm_password']
 
