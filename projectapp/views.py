@@ -387,3 +387,12 @@ def add_new_usertoproject(request,id):
         }, status=status.HTTP_201_CREATED)
 
     return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+###Fetch all the users
+@api_view(['GET'])
+def fetch_all_users(request):
+    user=User.objects.all()
+    serializer=UserSerializer(user,many=True)
+    return Response(serializer.data,status=status.HTTP_200_OK)

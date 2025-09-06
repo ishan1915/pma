@@ -11,6 +11,8 @@ urlpatterns = [
     path('user/profile/',CurrentUserAPI.as_view(),name='user_profile'),
     path('user/update/',UpdateProfileInfo.as_view(),name='update_profile'),
 
+    path('all_users/',fetch_all_users,name="all_users"),
+
 
     path('workspaces/',user_workspacelist,name='workspacelist'),
     path('workspace/<int:pk>/',workspace_details,name='workspace_details'),
